@@ -1,7 +1,5 @@
 # .gitignore for Terraform
-.terraform/           # provider binaries — large, not needed in Git
-.terraform.lock.hcl  # lock file — commit this one (keeps provider versions consistent)
-terraform.tfstate     # STATE FILE — NEVER commit this (contains secrets + resource IDs)
+.terraform/
+terraform.tfstate
 terraform.tfstate.backup
-*.tfvars              # variable values — may contain secrets
-!terraform.tfvars.example  # do commit an example file with fake values
+*.tfvars
