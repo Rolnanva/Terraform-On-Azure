@@ -9,8 +9,5 @@ output "resource_group_location" {
 }
 
 output "public_ips" {
-  value = {
-    for key, ip in azurerm_public_ip.main :
-    key => ip.ip_address
-  }
+ value = "Master: ${module.k8s-master-vm.public_ip_address}\n Worker: ${module.k8s-worker-vm.public_ip_address}"
 }

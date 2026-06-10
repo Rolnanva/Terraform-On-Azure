@@ -36,70 +36,20 @@ resource "azurerm_network_security_group" "main" {
 
 }
 
-locals {
-    VM_Names = {
-        master = "k8s-master"
-        worker = "k8s-worker"
-    }
-  
-}
-
-resource "azurerm_public_ip" "main" {
-    for_each = local.VM_Names
-    name = "${each.value}-Ip"
-    resource_group_name = azurerm_resource_group.main.name
-    location = var.location
-    allocation_method = "Static"
-    sku = "Standard"
-}
-
-resource "azurerm_network_interface" "main" {
-  for_each = local.VM_Names
-  name = "${each.value}-nic"
-  location = var.location
+module "k8s-master-vm" {
+  source = "./modules/linux-vm"
+  security_group_id = azurerm_network_security_group.main.id
   resource_group_name = azurerm_resource_group.main.name
-
-  ip_configuration {
-    name = "${each.value}-ipconf"
-    subnet_id = azurerm_subnet.main.id
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id = azurerm_public_ip.main[each.key].id
-  }
+  subnet_id = azurerm_subnet.main.id
+  adminusername = "k8s-master"
+  vm_name = "k8s-master"
 }
 
-resource "azurerm_network_interface_security_group_association" "main" {
-  for_each = local.VM_Names
-
-  network_interface_id      = azurerm_network_interface.main[each.key].id
-  network_security_group_id = azurerm_network_security_group.main.id
+module "k8s-worker-vm" {
+  source = "./modules/linux-vm"
+  security_group_id = azurerm_network_security_group.main.id
+  resource_group_name = azurerm_resource_group.main.name
+  subnet_id = azurerm_subnet.main.id
+  adminusername = "k8s-worker"
+  vm_name = "k8s-worker"
 }
-
-resource "azurerm_linux_virtual_machine" "main" {
-    for_each = local.VM_Names
-    name = "${each.value}-VM"
-    resource_group_name = azurerm_resource_group.main.name
-    location = var.location
-    size = var.vm_size
-    admin_username = "adminusername"
-    disable_password_authentication = true
-    network_interface_ids = [ azurerm_network_interface.main[each.key].id, ]
-
-    admin_ssh_key {
-      username = "adminusername"
-      public_key = file("C:\\Users\\rolan.nanvazadeh/.ssh/id_rsa.pub")
-    }
-
-    os_disk {
-      caching = "ReadWrite"
-      storage_account_type = "Standard_LRS"
-    }
-
-    source_image_reference {
-        publisher = "Canonical"
-        offer = "0001-com-ubuntu-server-jammy"
-        sku = "22_04-lts"
-        version = "latest"
-    } 
-  
-}
-
